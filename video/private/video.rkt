@@ -25,7 +25,6 @@
          racket/generic
          file/convertible
          (prefix-in file: file/convertible)
-         "utils.rkt"
          "mlt.rkt"
          (for-syntax racket/base
                      racket/list

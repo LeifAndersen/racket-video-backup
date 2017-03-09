@@ -26,7 +26,6 @@
          (only-in pict pict? pict->bitmap)
          "private/mlt.rkt"
          "private/video.rkt"
-         "private/utils.rkt"
          (for-syntax racket/base
                      racket/list
                      racket/syntax
