@@ -95,51 +95,22 @@
     (define profile (mlt-profile-init prof-name))
     
     (define/private (get-current-filename)
-      (begin0 (format "resource~a" res-counter)
-              (set! res-counter (add1 res-counter))))
+      (void))
 
     (define/public (get-profile)
-      profile)
+      (void))
     
     (define/public (setup-profile)
-      (define fps* (rationalize (inexact->exact fps) 1/1000000))
-      (set-mlt-profile-width! profile width)
-      (set-mlt-profile-height! profile height)
-      (set-mlt-profile-frame-rate-den! profile (denominator fps*))
-      (set-mlt-profile-frame-rate-num! profile (numerator fps*)))
+      (void))
     
     (define/public (prepare source)
-      (parameterize ([current-renderer this]
-                     [current-profile profile])
-        (cond
-          [(pict? source)
-           (define pict-name
-             (build-path (or dest-dir
-                             (make-temporary-file "rktvid~a" 'directory))
-                         (get-current-filename)))
-           (send (pict->bitmap source) save-file pict-name 'png 100)
-           (prepare (make-producer #:source (format "pixbuf:~a" pict-name)))]
-          [(file:convertible? source)
-           (define ret (or (file:convert source 'mlt)
-                           (file:convert source 'video)))
-           (or ret (error "Not convertible to video data"))]
-          [else (raise-user-error 'render "~a is not convertible" source)])))
+      (void))
       
     (define/public (render source)
-      (parameterize ([current-renderer this])
-        (mlt-*-connect (make-consumer) source)))
+      (void))
     
     (define/public (play source target start end speed timeout)
-      (mlt-producer-set-in-and-out source (or start -1) (or end -1))
-      (when speed
-        (mlt-producer-set-speed source (exact->inexact speed)))
-      (mlt-consumer-start target)
-      (let loop ([timeout timeout])
-        (sleep 1)
-        (when (and timeout (zero? timeout))
-          (mlt-consumer-stop target))
-        (unless (mlt-consumer-is-stopped target)
-          (loop (and timeout (sub1 timeout))))))))
+      (void))))
 
 ;; Set the current renderer
 (let ([r (new render% [dest-dir #f])])
