@@ -27,12 +27,13 @@
          (prefix-in file: file/convertible)
          "utils.rkt"
          "mlt.rkt"
-         "init-mlt.rkt"
          (for-syntax racket/base
                      racket/list
                      racket/syntax
                      racket/function
                      syntax/parse))
+
+(define (register-mlt-close x) x)
 
 (define current-renderer (make-parameter #f))
 (define current-profile (make-parameter #f))

@@ -24,8 +24,6 @@
          racket/file
          (prefix-in file: file/convertible)
          (only-in pict pict? pict->bitmap)
-         "private/init-mlt.rkt"
-         "init.rkt"
          "private/mlt.rkt"
          "private/video.rkt"
          "private/utils.rkt"
