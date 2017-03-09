@@ -31,13 +31,4 @@
                      racket/syntax
                      syntax/parse))
 
-(provide render%)
-
-(define render%
-  (class object%
-    (super-new)
-    (init-field [prof-name #f])
-    
-    (define profile (mlt-profile-init prof-name))))
-
-(new render%)
+(mlt-profile-init #f)
