@@ -87,22 +87,6 @@
     [else (error 'video "Unsupported target ~a" target)])
   target*)
 
-(define (finish-mlt-object-init! mlt-object video)
-  (void))
-
-;; Dynamic Dispatch for Video Objects
-(define-generics video-ops
-  (copy-video-op video-ops to-copy))
-(define copy-video
-  (make-keyword-procedure
-   (λ (kws kw-args . args)
-     (unless (= 1 (length args))
-       (error 'copy-video "copy-video requires exactly one non keyword argument"))
-     (copy-video-op (first args)
-                    (map cons
-                         (map (compose string->symbol keyword->string) kws)
-                         kw-args)))))
-
 ;; Constructor for video objects
 (define-syntax subclass-empty '(() () ()))
 (define-syntax (define-constructor stx)
@@ -126,14 +110,6 @@
          (struct name #,@(if (identifier? #'super*) (list #'super*) '())
            (ids ...)
            #:transparent
-           #:methods gen:video-ops
-           [(define (copy-video-op v to-copy)
-              (name
-               #,@(for/list ([i (in-list all-structs)]
-                             [j (in-list all-ids)])
-                    #`(if (dict-has-key? to-copy '#,j)
-                          (dict-ref to-copy '#,j)
-                          (#,(format-id stx "~a-~a" i j) v)))))]
            #:property prop:convertible
            (let ([memo-table (make-hasheq)])
              (λ (v request def)
@@ -141,15 +117,12 @@
                  ['mlt
                   (hash-ref! memo-table v
                              (λ ()
-                               (define ret (let ([this v])
+                               (let ([this v])
                                              (let #,(for/list ([i (in-list all-structs)]
                                                                [j (in-list all-ids)])
                                                       #`[#,(datum->syntax stx j)
                                                          (#,(format-id stx "~a-~a" i j) v)])
-                                               #f body ...)))
-                               (when ret
-                                 (finish-mlt-object-init! ret v))
-                               ret))]
+                                               #f body ...))))]
                  [_ def]))))
          (define (constructor #,@(append*
                                   (for/list ([i (in-list all-ids)]
