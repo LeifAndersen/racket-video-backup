@@ -68,8 +68,6 @@
 ;; Service -> _mlt-service
 (define (mlt-*-service video-object)
   (cond
-    [(link? video-object)
-     (mlt-*-service (link-target video-object))]
     [else
      (define video-object* (convert video-object))
      (cond
@@ -86,40 +84,11 @@
 (define (mlt-*-connect target source-service [index #f])
   (define target* (convert target))
   (cond
-    [(filter? target)
-     (mlt-filter-connect target*
-                         source-service
-                         index)]
     [else (error 'video "Unsupported target ~a" target)])
   target*)
 
 (define (finish-mlt-object-init! mlt-object video)
-  ;; Set properties
-  (when (properties? video)
-    (for ([(k v) (in-dict (properties-prop video))])
-      (cond
-        [(integer? v) (mlt-properties-set-int64 mlt-object k v)]
-        [(real? v) (mlt-properties-set-double mlt-object k v)]
-        [(string? v) (mlt-properties-set mlt-object k v)]
-        [(boolean? v) (mlt-properties-set/bool mlt-object k v)]
-        [(anim-property? v)
-         (match v
-           [(struct* anim-property ([value value]
-                                    [position position]
-                                    [length length]))
-            (cond
-              [(string? value)
-               (mlt-properties-anim-set mlt-object value position length)]
-              [else (error 'video "Anim Property type ~a not currently supported" value)])])]
-        [else (error 'video "Property type ~a not currently supported" v)])))
-  ;; Attach filters
-  (when (service? video)
-    (for ([f (in-list (service-filters video))])
-      (mlt-service-attach mlt-object (convert f))))
-  ;; Optimise if possible
-  #;
-  (when (producer? video)
-    (mlt-producer-optimise (video-mlt-object video))))
+  (void))
 
 ;; Dynamic Dispatch for Video Objects
 (define-generics video-ops
@@ -192,40 +161,3 @@
 
 ;; Structs
 (define-constructor video #f ())
-
-(define-constructor link video ([source #f] [target #f] [index 0])
-  (mlt-*-connect target (mlt-*-service source) index))
-
-(define-constructor properties video ([prop (hash)]
-                                      [prop-default-proc mlt-prop-default-proc]))
-
-(define (get-property dict key
-                      [extra-info #f])
-  (dict-ref (properties-prop dict) key
-            (λ () ((properties-prop-default-proc dict) dict key extra-info))))
-
-(define (mlt-prop-default-proc dict key default-type)
-  (define v (convert dict))
-  (unless v
-    (error 'properties "MLT object for ~a not created, cannot get default property" dict))
-  (match default-type
-    [(or 'string #f) (mlt-properties-get v key)]
-    ['int (mlt-properties-get-int v key)]
-    ['int64 (mlt-properties-get-int64 v key)]
-    ['mlt-position (mlt-properties-get-position v key)]
-    ['double (mlt-properties-get-double v key)]
-    [else (error 'properties "Not a valid default-type ~a" default-type)]))
-
-(define-constructor anim-property video ([value #f] [position #f] [length #f]))
-
-(define-constructor frame properties ())
-
-(define-constructor service properties ([filters '()]))
-
-(define-constructor filter service ([type #f] [source #f])
-  (define f (mlt-factory-filter (current-profile) type source))
-  (register-mlt-close mlt-filter-close f))
-
-(define-constructor transition service ([type #f] [source #f] [length #f])
-  (define t (mlt-factory-transition (current-profile) type source))
-  (register-mlt-close mlt-transition-close t))
