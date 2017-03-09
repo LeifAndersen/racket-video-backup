@@ -33,20 +33,6 @@
                      racket/function
                      syntax/parse))
 
-(define (register-mlt-close x) x)
-
-(define current-renderer (make-parameter #f))
-(define current-profile (make-parameter #f))
-
-;; A helper function to convert videos to MLT object
-;; Video (U Renderer% #f) -> _mlt-object
-(define (convert source
-                 #:renderer [renderer* #f])
-  (define renderer (or renderer* (current-renderer)))
-  (unless renderer
-    (error 'current-renderer "No renderer set"))
-  (send renderer prepare source))
-
 ;; Constructor for video objects
 (define-syntax subclass-empty '(() () ()))
 (define-syntax (define-constructor stx)
@@ -69,21 +55,7 @@
        (begin
          (struct name #,@(if (identifier? #'super*) (list #'super*) '())
            (ids ...)
-           #:transparent
-           #:property prop:convertible
-           (let ([memo-table (make-hasheq)])
-             (λ (v request def)
-               (match request
-                 ['mlt
-                  (hash-ref! memo-table v
-                             (λ ()
-                               (let ([this v])
-                                             (let #,(for/list ([i (in-list all-structs)]
-                                                               [j (in-list all-ids)])
-                                                      #`[#,(datum->syntax stx j)
-                                                         (#,(format-id stx "~a-~a" i j) v)])
-                                               #f body ...))))]
-                 [_ def]))))
+           #:transparent)
          (define (constructor #,@(append*
                                   (for/list ([i (in-list all-ids)]
                                              [j (in-list all-defaults)])
