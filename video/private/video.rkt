@@ -47,35 +47,6 @@
     (error 'current-renderer "No renderer set"))
   (send renderer prepare source))
 
-;; Helper function to determine if a producer
-;; can be potentially unbounded in length.
-;; Producer -> Boolean
-(define (unbounded-video? prod)
-  (cond
-    [else #f])) ;; Should only happen in playlists
-
-;; Calls mlt-*-service on the correct data type
-;;    (getting the service type)
-;; Service -> _mlt-service
-(define (mlt-*-service video-object)
-  (cond
-    [else
-     (define video-object* (convert video-object))
-     (cond
-       [(mlt-playlist? video-object*)
-        (mlt-playlist-service video-object*)]
-       [(mlt-producer? video-object*)
-        (mlt-producer-service video-object*)]
-       [else (error 'video "Unsupported video: ~a" video-object)])]))
-
-;; Connect target to source
-;; Video-Object _mlt-service Integer -> _mlt-consumer
-(define (mlt-*-connect target source-service [index #f])
-  (define target* (convert target))
-  (cond
-    [else (error 'video "Unsupported target ~a" target)])
-  target*)
-
 ;; Constructor for video objects
 (define-syntax subclass-empty '(() () ()))
 (define-syntax (define-constructor stx)
