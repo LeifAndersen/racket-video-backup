@@ -27,7 +27,6 @@
          (prefix-in file: file/convertible)
          "utils.rkt"
          "mlt.rkt"
-         "init-mlt.rkt"
          (for-syntax racket/base
                      racket/list
                      racket/syntax
@@ -36,6 +35,7 @@
 
 (define current-renderer (make-parameter #f))
 (define current-profile (make-parameter #f))
+(define (register-mlt-close x) x)
 
 ;; A helper function to convert videos to MLT object
 ;; Video (U Renderer% #f) -> _mlt-object
@@ -345,8 +345,3 @@
   tractor*)
 
 (define-constructor field-element video ([element #f] [track #f] [track-2 #f]))
-
-;; The render module sets a parameter we rely on
-;;  (Yes, we 'could' do it with units, but requires a large
-;;   amount of boilerplate.)
-(void (dynamic-require (build-path video-dir "render.rkt") #f))
