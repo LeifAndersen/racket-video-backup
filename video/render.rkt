@@ -31,4 +31,5 @@
                      racket/syntax
                      syntax/parse))
 
+(mlt-factory-init #f)
 (mlt-profile-init #f)
