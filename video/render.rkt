@@ -32,57 +32,10 @@
                      racket/syntax
                      syntax/parse))
 
-(provide
- (contract-out
-  ;; Render a video object (including the links
-  [render (->* [any/c]
-               [(or/c path-string? path? #f)
-                #:dest-filename (or/c path-string? path? #f)
-                #:render-mixin (-> class? class?)
-                #:profile-name (or/c string? #f)
-                #:width (and/c integer? positive?)
-                #:height (and/c integer? positive?)
-                #:fps number?
-                #:start (or/c nonnegative-integer? #f)
-                #:end (or/c nonnegative-integer? #f)
-                #:speed (or/c number? #f)
-                #:timeout (or/c number? #f)]
-               void?)])
- render%
- render<%>)
-
-(define (render video
-                [dest #f]
-                #:dest-filename [dest-filename #f]
-                #:render-mixin [render-mixin values]
-                #:profile-name [profile-name #f]
-                #:width [width 720]
-                #:height [height 576]
-                #:start [start #f]
-                #:end [end #f]
-                #:fps [fps 25]
-                #:speed [speed #f]
-                #:timeout [timeout #f])
-  (define dest* (or dest (make-temporary-file "rktvid~a" 'directory)))
-  (define r% (render-mixin render%))
-  (define renderer
-    (new r%
-         [dest-dir dest*]
-         [dest-filename dest-filename]
-         [width width]
-         [height height]
-         [fps fps]))
-  (let* ([res (send renderer setup-profile)]
-         [res (send renderer prepare video)]
-         [target (send renderer render res)]
-         [res (send renderer play res target start end speed timeout)])
-    (void)))
-
-(define render<%>
-  (interface () get-profile setup-profile prepare render play))
+(provide render%)
 
 (define render%
-  (class* object% (render<%>)
+  (class object%
     (super-new)
     (init-field dest-dir
                 [dest-filename #f]
@@ -113,7 +66,4 @@
       (void))))
 
 ;; Set the current renderer
-(let ([r (new render% [dest-dir #f])])
-  (send r setup-profile)
-  (current-renderer r)
-  (current-profile (send r get-profile)))
+(send (new render% [dest-dir #f]) setup-profile)
