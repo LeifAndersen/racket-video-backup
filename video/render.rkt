@@ -37,33 +37,8 @@
 (define render%
   (class object%
     (super-new)
-    (init-field dest-dir
-                [dest-filename #f]
-                [prof-name #f]
-                [width 720]
-                [height 576]
-                [fps 25])
+    (init-field [prof-name #f])
     
-    (define res-counter 0)
-    (define profile (mlt-profile-init prof-name))
-    
-    (define/private (get-current-filename)
-      (void))
+    (define profile (mlt-profile-init prof-name))))
 
-    (define/public (get-profile)
-      (void))
-    
-    (define/public (setup-profile)
-      (void))
-    
-    (define/public (prepare source)
-      (void))
-      
-    (define/public (render source)
-      (void))
-    
-    (define/public (play source target start end speed timeout)
-      (void))))
-
-;; Set the current renderer
-(send (new render% [dest-dir #f]) setup-profile)
+(new render%)
