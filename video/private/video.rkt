@@ -52,6 +52,8 @@
 ;; Producer -> Boolean
 (define (unbounded-video? prod)
   (cond
+    [(playlist? prod) (ormap unbounded-video? (playlist-elements prod))]
+    [(producer? prod) (producer-unbounded? prod)]
     [else #f])) ;; Should only happen in playlists
 
 ;; DEBUG FUNCTION ONLY
@@ -86,6 +88,9 @@
 (define (mlt-*-connect target source-service [index #f])
   (define target* (convert target))
   (cond
+    [(consumer? target)
+     (mlt-consumer-connect target*
+                           source-service)]
     [(filter? target)
      (mlt-filter-connect target*
                          source-service
@@ -229,3 +234,48 @@
 (define-constructor transition service ([type #f] [source #f] [length #f])
   (define t (mlt-factory-transition (current-profile) type source))
   (register-mlt-close mlt-transition-close t))
+
+(define-constructor consumer service ([type #f] [target #f])
+  (define c (mlt-factory-consumer (current-profile) type target))
+  (register-mlt-close mlt-consumer-close c))
+
+(define-constructor producer service ([type #f]
+                                      [source #f]
+                                      [start #f]
+                                      [end #f]
+                                      [speed #f]
+                                      [seek #f]
+                                      [unbounded? #f])
+  (define producer* (mlt-factory-producer (current-profile) type source))
+  (define start* (or start -1))
+  (define end* (or end -1))
+  (mlt-producer-set-in-and-out producer* start* (- end* 1))
+  (when speed
+    (mlt-producer-set-speed producer* speed))
+  (when seek
+    (mlt-producer-seek producer* seek))
+  (register-mlt-close mlt-producer-close producer*))
+
+(define-constructor blank producer ([length 0])
+  (convert (make-playlist #:elements (list this))))
+
+(require racket/pretty)
+(define-constructor playlist producer ([elements '()])
+  (define playlist* (mlt-playlist-init))
+  (for ([i (in-list elements)])
+    (match i
+      [(struct* blank ([length length]))
+       (mlt-playlist-blank playlist* length)]
+      [(struct* transition ()) (void)] ;; Must be handled after clips are added
+      [_ ; (struct* producer ()) (But can be converted first
+       (define i* (convert i))
+       (mlt-playlist-append playlist* i*)]
+      #;[_ (error 'playlist "Not a playlist element: ~a" i)]))
+  (for ([e (in-list elements)]
+        [i (in-naturals)])
+    (when (transition? e)
+      (mlt-playlist-mix playlist*
+                        (sub1 i)
+                        (or (transition-length e) 0)
+                        (convert e))))
+  (register-mlt-close mlt-playlist-close playlist*))
