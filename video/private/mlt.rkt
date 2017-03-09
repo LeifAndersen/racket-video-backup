@@ -189,3 +189,30 @@
    [close-object (_cpointer/null 'close-object)]
    [local (_cpointer/null 'local)]
    [child (_cpointer/null 'child)]))
+(define-cstruct (_mlt-playlist _mlt-producer)
+  ([blank* _mlt-producer]
+   [size* _int]
+   [count* _int]
+   [list* (_cpointer 'list (_cpointer 'list* _playlist-entry))]))
+(define-cstruct _mlt-playlist-clip-info
+  ([clip _int]
+   [producer _mlt-producer-pointer/null]
+   [cut _mlt-producer-pointer/null]
+   [start _mlt-position]
+   [resource _string]
+   [frame-in _mlt-position]
+   [frame-out _mlt-position]
+   [frame-count _mlt-position]
+   [length _mlt-position]
+   [fps _float]
+   [repeate _int]))
+(define-cstruct (_mlt-tractor _mlt-producer)
+  ([producer* _mlt-service-pointer]))
+(define-cstruct _mlt-track
+  ([producer _mlt-producer-pointer/null]
+   [event _mlt-event/null]))
+(define-cstruct (_mlt-multitrack _mlt-producer)
+   ([list* _mlt-track-pointer]
+   [size* _int]
+   [count* _int]))
+
