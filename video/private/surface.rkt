@@ -21,7 +21,6 @@
          racket/math
          (only-in scribble/manual defproc)
          "video.rkt"
-         (for-label "../core.rkt")
          (for-syntax syntax/parse
                      syntax/parse/lib/function-header
                      racket/syntax

@@ -28,13 +28,7 @@
                     racket/hash
                     (except-in racket/class field)
                     racket/gui/base
-                    racket/draw
-                    video/base
-                    video/core
-                    video/render
-                    video/player
-                    video/init
-                    video/lib]]
+                    racket/draw]]
 
 @title{The Video Language Guide}
 @author{Leif Andersen}

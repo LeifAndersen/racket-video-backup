@@ -22,9 +22,7 @@
          racket/sandbox
          racket/list
          racket/math
-         "utils.rkt"
-         @for-label[video
-                    video/base]]
+         "utils.rkt"]
 
 @(define vid-eval
    (make-base-eval '(begin (require video/base))))
