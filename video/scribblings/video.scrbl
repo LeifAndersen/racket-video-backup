@@ -21,6 +21,7 @@
          racket/sandbox
          (except-in pict table)
          video/private/utils
+         video/private/surface
          @for-label[(except-in racket/base filter)
                     racket/contract/base
                     racket/set
