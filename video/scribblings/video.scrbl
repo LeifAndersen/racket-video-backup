@@ -32,4 +32,3 @@
 @title{The Video Language Guide}
 @author{Leif Andersen}
 
-@(defmodulelang video)
