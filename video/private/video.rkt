@@ -53,7 +53,6 @@
 (define (unbounded-video? prod)
   (cond
     [(playlist? prod) (ormap unbounded-video? (playlist-elements prod))]
-    [(multitrack? prod) (andmap unbounded-video? (multitrack-tracks prod))]
     [(producer? prod) (producer-unbounded? prod)]
     [else #f])) ;; Should only happen in playlists
 
@@ -267,11 +266,6 @@
     (match i
       [(struct* blank ([length length]))
        (mlt-playlist-blank playlist* length)]
-      [(struct* playlist-producer ([start start]
-                                   [end end]))
-       #:when (and start end)
-       (define i* (convert i))
-       (mlt-playlist-append-io playlist* i* start end)]
       [(struct* transition ()) (void)] ;; Must be handled after clips are added
       [_ ; (struct* producer ()) (But can be converted first
        (define i* (convert i))
@@ -285,69 +279,3 @@
                         (or (transition-length e) 0)
                         (convert e))))
   (register-mlt-close mlt-playlist-close playlist*))
-
-(define-constructor playlist-producer video ([producer #f] [start #f] [end #f])
-  (convert producer))
-
-(define-constructor multitrack producer ([tracks '()] [field '()])
-  (define tractor* (mlt-tractor-new))                    ; Tractor
-  (define multitrack* (mlt-tractor-multitrack tractor*)) ; Multitrack
-  (for ([track (in-list tracks)]
-        [i (in-naturals)])
-    (define track* (convert track))
-    (mlt-multitrack-connect multitrack* track* i))
-  (define-values (max-bounded-in max-bounded-out)
-    (for/fold ([i 0]    ;; MLT multitracks will become largest producer
-               [o #f])  ;; which is a problem for unbounded data.
-              ([track (in-list tracks)])
-      (define unbounded? (unbounded-video? track))
-      (cond
-        [unbounded? (values i o)]
-        [else
-         (define in (get-property track "in" 'int))
-         (define out (get-property track "out" 'int))
-         (values
-          (if in
-              (min i in)
-              i)
-          (cond [(and o out)
-                 (max o out)]
-                [out out]
-                [else o]))])))
-  (mlt-producer-set-in-and-out tractor* (or max-bounded-in -1) (or max-bounded-out -1))
-  (register-mlt-close mlt-multitrack-close multitrack*)
-  (define field* (mlt-tractor-field tractor*))           ; Field
-  (for ([element (in-list field)])
-    (match element
-      [(struct* field-element ([element element]
-                               [track track]
-                               [track-2 track-2]))
-       (define element* (convert element))
-       (cond
-         [(transition? element)
-          (define-values (track* track2*)
-            (for/fold ([track* #f]
-                       [track2* #f])
-                     ([t (in-list tracks)]
-                      [i (in-naturals)])
-              (values
-               (or track* (if (eq? t track) i #f))
-               (or track2* (if (eq? t track-2) i #f)))))
-          (unless (and track* track2*)
-            (error 'multitrack
-                   "Cannot find producers in multitrack ~a: ~a ~a"
-                   tracks
-                   track
-                   track-2))
-          (mlt-field-plant-transition field* element* track* track2*)]
-         [(filter? element)
-          (mlt-field-plant-filter field* element* track)])]))
-  (register-mlt-close mlt-field-close field*)
-  tractor*)
-
-(define-constructor field-element video ([element #f] [track #f] [track-2 #f]))
-
-;; The render module sets a parameter we rely on
-;;  (Yes, we 'could' do it with units, but requires a large
-;;   amount of boilerplate.)
-(void (dynamic-require (build-path video-dir "render.rkt") #f))
