@@ -92,6 +92,7 @@
                 [fps 25])
     
     (define res-counter 0)
+    (define profile (mlt-profile-init prof-name))
     
     (define/private (get-current-filename)
       (void))

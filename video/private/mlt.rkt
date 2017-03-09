@@ -216,3 +216,29 @@
    [size* _int]
    [count* _int]))
 
+;; Factory
+(define-mlt* mlt-factory-init (_fun _path -> [v : _mlt-repository/null]
+                                    -> (null-error v)))
+(define-mlt* mlt-factory-producer (_fun _mlt-profile-pointer _symbol-or-null _string
+                                        -> [v : _mlt-producer-pointer/null]
+                                        -> (null-error v)))
+(define-mlt* mlt-factory-consumer (_fun _mlt-profile-pointer _symbol-or-null _string
+                                        -> [v : _mlt-consumer-pointer/null]
+                                        -> (null-error v)))
+(define-mlt* mlt-factory-filter (_fun _mlt-profile-pointer _symbol-or-null _string
+                                      -> [v : _mlt-filter-pointer/null]
+                                      -> (null-error v)))
+(define-mlt* mlt-factory-transition (_fun _mlt-profile-pointer _symbol-or-null _string
+                                          -> [v : _mlt-transition-pointer/null]
+                                          -> (null-error v)))
+(define-mlt* mlt-factory-close (_fun -> _void))
+
+;; Profile
+(define-mlt* mlt-profile-init (_fun _string -> [v : _mlt-profile-pointer/null]
+                                    -> (null-error v)))
+(define-mlt* mlt-profile-clone (_fun _mlt-profile-pointer -> [v : _mlt-profile-pointer]
+                                     -> (null-error v)))
+(define-mlt* mlt-profile-close (_fun _mlt-profile-pointer -> _void))
+(define-mlt* mlt-profile-dar (_fun _mlt-profile-pointer -> _double))
+(define-mlt* mlt-profile-fps (_fun _mlt-profile-pointer -> _double))
+(define-mlt* mlt-profile-from-producer (_fun _mlt-profile-pointer _mlt-producer-pointer -> _void))
