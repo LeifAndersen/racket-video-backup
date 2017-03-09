@@ -117,8 +117,7 @@
              (build-path (or dest-dir
                              (make-temporary-file "rktvid~a" 'directory))
                          (get-current-filename)))
-           (send (pict->bitmap source) save-file pict-name 'png 100)
-           (prepare (make-producer #:source (format "pixbuf:~a" pict-name)))]
+           (send (pict->bitmap source) save-file pict-name 'png 100)]
           [(file:convertible? source)
            (define ret (or (file:convert source 'mlt)
                            (file:convert source 'video)))
@@ -126,8 +125,7 @@
           [else (raise-user-error 'render "~a is not convertible" source)])))
       
     (define/public (render source)
-      (parameterize ([current-renderer this])
-        (mlt-*-connect (make-consumer) source)))
+      (void))
     
     (define/public (play source target start end speed timeout)
       (mlt-producer-set-in-and-out source (or start -1) (or end -1))
