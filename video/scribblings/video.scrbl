@@ -78,9 +78,6 @@ interface may or may not change in the near future.
 
 @table-of-contents[]
 
-@include-section{intro.scrbl}
-@include-section{api.scrbl}
-
 @section{Player}
 @defmodule[video/player]
 
