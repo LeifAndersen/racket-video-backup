@@ -1,5 +1,4 @@
-#lang s-exp syntax/module-reader
-video
+#lang racket/base
 
 #|
    Copyright 2016-2017 Leif Andersen
@@ -17,17 +16,8 @@ video
    limitations under the License.
 |#
 
-#:read read
-#:read-syntax read-syntax
-#:wrapper1 (λ (x) (list* 'vid 'values '() (x)))
-#:info make-info
+;; Library to initialize the MLT framework.
+;; Alternatively your program can just call `mlt-factory-init` on its own.
 
-(require scribble/reader)
+(require "private/init-mlt.rkt")
 
-(define (make-info key default use-default)
-  (case key
-    [(drracket:toolbar-buttons)
-     (define camera-button
-       (dynamic-require 'video/private/camera-icon 'camera-button))
-     (list camera-button)]
-    [else (use-default key default)]))

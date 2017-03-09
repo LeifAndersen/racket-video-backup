@@ -28,7 +28,13 @@
                     racket/hash
                     (except-in racket/class field)
                     racket/gui/base
-                    racket/draw]]
+                    racket/draw
+                    video/base
+                    video/core
+                    video/render
+                    video/player
+                    video/init
+                    video/lib]]
 
 
 @title{Video API}
