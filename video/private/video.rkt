@@ -54,15 +54,6 @@
   (cond
     [else #f])) ;; Should only happen in playlists
 
-;; DEBUG FUNCTION ONLY
-;; Save a textual marshalization of a property's prop
-;;  table to a file.
-;; Properties Path -> Void
-(define (debug/save-prop prop filepath)
-  (mlt-properties-save (convert prop) (if (absolute-path? filepath)
-                                          filepath
-                                          (build-path (current-directory) filepath))))
-
 ;; Calls mlt-*-service on the correct data type
 ;;    (getting the service type)
 ;; Service -> _mlt-service
@@ -71,8 +62,6 @@
     [else
      (define video-object* (convert video-object))
      (cond
-       [(mlt-filter? video-object*)
-        (mlt-filter-service video-object*)]
        [(mlt-playlist? video-object*)
         (mlt-playlist-service video-object*)]
        [(mlt-producer? video-object*)
