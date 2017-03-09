@@ -43,14 +43,6 @@
 (struct exn:fail:mlt exn:fail ())
 (struct exn:fail:mlt:warning exn:fail:mlt ())
 (define raise-mlt-warnings (make-parameter #f))
-(define-syntax (raise-mlt-warning stx)
-  (syntax-parse stx
-    [(_ function:id)
-     #:with expanded-function (local-expand #'function 'expression #f)
-     (syntax/loc stx
-       (when (raise-mlt-warnings)
-         (raise (exn:fail:mlt:warning (format "MLT: Function ~a returned warning" 'expanded-function)
-                                      (current-continuation-marks)))))]))
 (define-syntax (raise-mlt-error stx)
   (syntax-parse stx
     [(_ function:id (~optional (~seq #:msg msg:str)
@@ -59,10 +51,6 @@
      (syntax/loc stx
        (raise (exn:fail:mlt (format "MLT: Function ~a failed: ~a" 'expanded-function msg)
                             (current-continuation-marks))))]))
-(define-syntax (ret-error stx)
-  (syntax-parse stx
-    [(_ v)
-     (quasisyntax/loc stx (when v (raise-mlt-error current-func-name)))]))
 (define-syntax (null-error stx)
   (syntax-parse stx
     [(_ v)
@@ -70,19 +58,7 @@
 
 ;; Types
 (define-cpointer-type _mlt-repository)
-(define-cstruct _mlt-profile
-  ([description _string]
-   [frame-rate-num _int]
-   [frame-rate-den _int]
-   [width _int]
-   [height _int]
-   [progressive _int]
-   [sample-aspect-num _int]
-   [sample-aspect-den _int]
-   [display-aspect-num _int]
-   [disaply-aspect-den _int]
-   [colorspace _int]
-   [is-explicit _int]))
+(define-cpointer-type _mlt-profile-pointer)
 
 (define-mlt* mlt-factory-init (_fun _path -> [v : _mlt-repository/null]
                                     -> (null-error v)))
