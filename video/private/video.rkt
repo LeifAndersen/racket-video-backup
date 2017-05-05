@@ -34,16 +34,6 @@
     (error 'current-renderer "No renderer set"))
   (send renderer prepare source))
 
-;; Helper function to determine if a producer
-;; can be potentially unbounded in length.
-;; Producer -> Boolean
-(define (unbounded-video? prod)
-  (cond
-    [(playlist? prod) (ormap unbounded-video? (playlist-elements prod))]
-    [(multitrack? prod) (andmap unbounded-video? (multitrack-tracks prod))]
-    [(producer? prod) (producer-unbounded? prod)]
-    [else #f])) ;; Should only happen in playlists
-
 ;; DEBUG FUNCTION ONLY
 ;; Save a textual marshalization of a property's prop
 ;;  table to a file.
@@ -53,79 +43,8 @@
                                           filepath
                                           (build-path (current-directory) filepath))))
 
-;; Calls mlt-*-service on the correct data type
-;;    (getting the service type)
-;; Service -> _mlt-service
-(define (mlt-*-service video-object)
-  (cond
-    [(link? video-object)
-     (mlt-*-service (link-target video-object))]
-    [else
-     (define video-object* (convert video-object))
-     (cond
-       [(mlt-filter? video-object*)
-        (mlt-filter-service video-object*)]
-       [(mlt-playlist? video-object*)
-        (mlt-playlist-service video-object*)]
-       [(mlt-producer? video-object*)
-        (mlt-producer-service video-object*)]
-       [else (error 'video "Unsupported video: ~a" video-object)])]))
-
-;; Connect target to source
-;; Video-Object _mlt-service Integer -> _mlt-consumer
-(define (mlt-*-connect target source-service [index #f])
-  (define target* (convert target))
-  (cond
-    [(consumer? target)
-     (mlt-consumer-connect target*
-                           source-service)]
-    [(filter? target)
-     (mlt-filter-connect target*
-                         source-service
-                         index)]
-    [else (error 'video "Unsupported target ~a" target)])
-  target*)
-
 (define (finish-mlt-object-init! mlt-object video)
-  ;; Set properties
-  (when (properties? video)
-    (for ([(k v) (in-dict (properties-prop video))])
-      (cond
-        [(integer? v) (mlt-properties-set-int64 mlt-object k v)]
-        [(real? v) (mlt-properties-set-double mlt-object k v)]
-        [(string? v) (mlt-properties-set mlt-object k v)]
-        [(boolean? v) (mlt-properties-set/bool mlt-object k v)]
-        [(anim-property? v)
-         (match v
-           [(struct* anim-property ([value value]
-                                    [position position]
-                                    [length length]))
-            (cond
-              [(string? value)
-               (mlt-properties-anim-set mlt-object value position length)]
-              [else (error 'video "Anim Property type ~a not currently supported" value)])])]
-        [else (error 'video "Property type ~a not currently supported" v)])))
-  ;; Attach filters
-  (when (service? video)
-    (for ([f (in-list (service-filters video))])
-      (mlt-service-attach mlt-object (convert f))))
-  ;; Optimise if possible
-  #;
-  (when (producer? video)
-    (mlt-producer-optimise (video-mlt-object video))))
-
-;; Dynamic Dispatch for Video Objects
-(define-generics video-ops
-  (copy-video-op video-ops to-copy))
-(define copy-video
-  (make-keyword-procedure
-   (λ (kws kw-args . args)
-     (unless (= 1 (length args))
-       (error 'copy-video "copy-video requires exactly one non keyword argument"))
-     (copy-video-op (first args)
-                    (map cons
-                         (map (compose string->symbol keyword->string) kws)
-                         kw-args)))))
+  (void))
 
 ;; Constructor for video objects
 (define-syntax subclass-empty '(() () ()))
@@ -150,14 +69,6 @@
          (struct name #,@(if (identifier? #'super*) (list #'super*) '())
            (ids ...)
            #:transparent
-           #:methods gen:video-ops
-           [(define (copy-video-op v to-copy)
-              (name
-               #,@(for/list ([i (in-list all-structs)]
-                             [j (in-list all-ids)])
-                    #`(if (dict-has-key? to-copy '#,j)
-                          (dict-ref to-copy '#,j)
-                          (#,(format-id stx "~a-~a" i j) v)))))]
            #:property prop:convertible
            (let ([memo-table (make-hasheq)])
              (λ (v request def)
@@ -184,26 +95,6 @@
          (define-syntax new-supers '#,(list all-structs all-ids all-defaults))))]))
 
 (define-constructor video #f ())
-(define-constructor link video ([source #f] [target #f] [index 0]))
-(define-constructor properties video ([prop (hash)]))
-(define-constructor anim-property video ([value #f] [position #f] [length #f]))
-(define-constructor frame properties ())
-(define-constructor service properties ([filters '()]))
-(define-constructor filter service ([type #f] [source #f]))
-(define-constructor transition service ([type #f] [source #f] [length #f]))
-(define-constructor consumer service ([type #f] [target #f]))
-(define-constructor producer service ([type #f]
-                                      [source #f]
-                                      [start #f]
-                                      [end #f]
-                                      [speed #f]
-                                      [seek #f]
-                                      [unbounded? #f]))
-(define-constructor blank producer ([length 0]))
-(define-constructor playlist producer ([elements '()]))
-(define-constructor playlist-producer video ([producer #f] [start #f] [end #f]))
-(define-constructor multitrack producer ([tracks '()] [field '()]))
-(define-constructor field-element video ([element #f] [track #f] [track-2 #f]))
 
 ;; Hack because we can't currently guarentee that mlt is installed
 (when mlt-lib
