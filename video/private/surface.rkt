@@ -111,20 +111,6 @@
              optional-args ...]
             (and/c producer? ret?))]))
 
-(define-syntax (defproducer stx)
-  (syntax-parse stx
-    [(_ (id:id args ...)
-        (~optional (~seq #:return ret)) ;; TODO, don't ignore this
-        content ...)
-     #'(defproc (id args ...
-                    [#:start start (or/c nonnegative-integer? #f) #f]
-                    [#:end end (or/c nonnegative-integer? #f) #f]
-                    [#:length length (or/c nonnegative-integer? #f) #f]
-                    [#:properties properties (hash/c string? any/c) (hash)]
-                    [#:filters filters (listof filter?) '()])
-         producer?
-         content ...)]))
-
 ;; Transitions =======================================================================================
 
 (define-syntax (define-transition stx)
@@ -168,18 +154,3 @@
                   [(or 's/e 'start/end _) #'(#:start (or/c any/c #f) #:end (or/c any/c #f))])
              optional ...]
             (and/c (or/c transition? field-element?) ret?))]))
-
-(define-syntax (deftransition stx)
-  (syntax-parse stx
-    [(_ (id:id args ...)
-        (~optional (~seq #:direction direction))
-        body ...)
-     #`(defproc (id args ...
-                    [#:length length (or/c nonnegative-integer? #f) #f]
-                    #,@(match (syntax-e (attribute direction))
-                         [(or 't/b 'top/bottom) #'([#:top top (or/c any/c #f) #f]
-                                                   [#:bottom bottom (or/c any/c #f) #f])]
-                         [(or 's/e 'start/end _) #'([#:start start (or/c any/c #f) #f]
-                                                    [#:end end (or/c any/c #f) #f])]))
-         (or/c transition? field-element?)
-         body ...)]))
