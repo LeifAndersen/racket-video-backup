@@ -196,10 +196,8 @@
          (define-syntax new-supers '#,(list all-structs all-ids all-defaults))))]))
 
 (define-constructor video #f ())
-(define-constructor link video ([source #f] [target #f] [index 0])
-(define-constructor properties video ([prop (hash)]
-(define (get-property dict key
-(define (mlt-prop-default-proc dict key default-type)
+(define-constructor link video ([source #f] [target #f] [index 0]))
+(define-constructor properties video ([prop (hash)]))
 (define-constructor anim-property video ([value #f] [position #f] [length #f]))
 (define-constructor frame properties ())
 (define-constructor service properties ([filters '()]))
