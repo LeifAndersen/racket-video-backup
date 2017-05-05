@@ -8,4 +8,4 @@
 
 (provide (all-defined-out))
 
-(define profile (mlt-profile-init #f))
+(define profile (mlt_profile_init #f))

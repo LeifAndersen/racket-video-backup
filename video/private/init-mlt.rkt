@@ -17,11 +17,11 @@
   (let ([v (scheme_register_process_global "mlt-support-initialized"
                                            (cast 1 _racket _pointer))])
     (unless v
-      (void (mlt-factory-init #f))))
+      (void (mlt_factory_init #f))))
 
   ;; Close MLT factory on program exit
   (void
    (plumber-add-flush!
     (current-plumber) (λ (p)
                         (collect-garbage)
-                        (mlt-factory-close)))))
+                        (mlt_factory_close)))))
