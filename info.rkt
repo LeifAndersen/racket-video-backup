@@ -7,7 +7,3 @@
                "scribble-lib"))
 (define build-deps '("scribble-lib"
                      "racket-doc"))
-
-(define version "0.1")
-(define pkg-authors '(leif))
-(define pkg-desc "Video Language")
