@@ -34,15 +34,6 @@
     (error 'current-renderer "No renderer set"))
   (send renderer prepare source))
 
-;; DEBUG FUNCTION ONLY
-;; Save a textual marshalization of a property's prop
-;;  table to a file.
-;; Properties Path -> Void
-(define (debug/save-prop prop filepath)
-  (mlt-properties-save (convert prop) (if (absolute-path? filepath)
-                                          filepath
-                                          (build-path (current-directory) filepath))))
-
 (define (finish-mlt-object-init! mlt-object video)
   (void))
 
