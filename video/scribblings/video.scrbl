@@ -31,7 +31,6 @@
                     racket/gui/base
                     racket/draw
                     video/init
-                    video/core
                     video/render
                     video/init]]
 
