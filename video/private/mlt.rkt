@@ -57,64 +57,13 @@
      (syntax/loc stx
        (raise (exn:fail:mlt (format "MLT: Function ~a failed: ~a" 'expanded-function msg)
                             (current-continuation-marks))))]))
-(define-syntax (ret-error stx)
-  (syntax-parse stx
-    [(_ v)
-     (quasisyntax/loc stx (when v (raise-mlt-error current-func-name)))]))
 (define-syntax (null-error stx)
   (syntax-parse stx
     [(_ v)
      (quasisyntax/loc stx (or v (raise-mlt-error current-func-name)))]))
 
 ;; Types
-(define _symbol-or-null
-  (make-ctype _string
-              (λ (v) (if (symbol? v) (symbol->string v) v))
-              (λ (v) (if (string? v) (string->symbol v) v))))
-(define _mlt-position _int32)
-(define _mlt-destructor (_fun (_cpointer 'destruct) -> _void))
-(define _mlt-image-format (_enum '(mlt-image-none = 0
-                                   mlt-image-rgb24
-                                   mlt-image-rgb24a
-                                   mlt-image-yuv422
-                                   mlt-image-yuv420p
-                                   mlt-image-opengl
-                                   mlt-image-glsl
-                                   mlt-image-glsl-texture)))
-(define _mlt-audio-format (_enum '(mlt-audio-none = 0
-                                   mlt-audio-pcm
-                                   mlt-audio-s16
-                                   mlt-audio-s32
-                                   mlt-audio-float
-                                   mlt-audio-s32le
-                                   mlt-audio-f32le
-                                   mlt-audio-u8)))
-(define _mlt-whence (_enum '(mlt-whence-relative-start = 0
-                             mlt-whence-relative-current
-                             mlt-whence-relative-end)))
-(define _mlt-service-type (_enum '(invalid-type = 0
-                                   unknown-type
-                                   producer-type
-                                   tractor-type
-                                   playlist-type
-                                   multitrack-type
-                                   filter-type
-                                   transition-type
-                                   consumer-type
-                                   field-type)))
-(define _mlt-time-format (_enum '(mlt-time-frames = 0
-                                  mlt-time-clock
-                                  mlt-time-smpte-df
-                                  mlt-time-smpte
-                                  mlt-time-smpte-ndf)))
-(define _mlt-keyframe-type (_enum '(mlt-keyframe-discrete = 0
-                                    mlt-keyframe-linear
-                                    mlt-keyframe-smooth)))
 (define-cpointer-type _mlt-repository)
-(define-cpointer-type _mlt-deque)
-(define-cpointer-type _playlist-entry)
-(define-cpointer-type _mlt-event)
-(define-cpointer-type _mlt-field)
 (define-cstruct _mlt-profile
   ([description _string]
    [frame-rate-num _int]
@@ -128,107 +77,10 @@
    [disaply-aspect-den _int]
    [colorspace _int]
    [is-explicit _int]))
-(define-cstruct _mlt-properties
-  ([child (_cpointer/null 'child)]
-   [local (_cpointer/null 'local)]
-   [close _mlt-destructor]
-   [close-object (_cpointer/null 'close-object)]))
-(define-cstruct (_mlt-frame _mlt-properties)
-  ([get-alpha-mask (_fun _mlt-frame-pointer -> (_ptr o _uint8))]
-   [convert-image (_fun _mlt-frame-pointer
-                        (_ptr io (_ptr io _uint8))
-                        (_ptr io _mlt-image-format)
-                        _mlt-image-format
-                        -> [v : _bool]
-                        -> (when v (raise-mlt-error mlt-frame-convert-image)))]
-   [convert-audio (_fun _mlt-frame-pointer
-                        (_ptr io (_ptr io _void))
-                        (_ptr io _mlt-audio-format)
-                        _mlt-audio-format
-                        -> [v : _bool]
-                        -> (when v (raise-mlt-error mlt-framework-convert-audio)))]
-   [stack-image _mlt-deque]
-   [stack-audio _mlt-deque]
-   [stack-service _mlt-deque]
-   [is-processing _int]))
-(define-cstruct (_mlt-service _mlt-properties)
-  ([get-frame (_fun _mlt-service-pointer _mlt-frame-pointer _int -> _int)]
-   [close* _mlt-destructor]
-   [close-object (_cpointer/null 'class-object)]
-   [local (_cpointer/null 'local)]
-   [child (_cpointer/null 'child)]))
-(define-cstruct (_mlt-consumer _mlt-service)
-  ([start* (_fun _mlt-consumer-pointer -> [v : _bool]
-                 -> (when v (raise-mlt-error mlt-consumer-start)))]
-   [stop* (_fun _mlt-consumer-pointer -> [v : _bool]
-                -> (when v (raise-mlt-error mlt-consumer-stop)))]
-   [is-stopped* (_fun _mlt-consumer-pointer -> [v : _bool]
-                      -> (when v (raise-mlt-error mlt-consumer-is-stopped)))]
-   [purge* (_fun _mlt-consumer-pointer -> [v : _bool]
-                 -> (when v (raise-mlt-error mlt-consumer-purge)))]
-   [close* (_fun _mlt-consumer-pointer -> _void)]
-   [local (_cpointer/null 'local)]
-   [child (_cpointer/null 'child)]))
-(define-cstruct (_mlt-filter _mlt-service)
-  ([close* (_fun _mlt-filter-pointer -> _void)]
-   [process* (_fun _mlt-filter-pointer _mlt-frame-pointer -> _mlt-frame-pointer)]
-   [child (_cpointer/null 'child)]))
-(define-cstruct (_mlt-transition _mlt-service)
-  ([close* (_fun _mlt-transition-pointer -> _void)]
-   [process* (_fun _mlt-transition-pointer _mlt-frame-pointer _mlt-frame-pointer
-                   -> _mlt-frame-pointer)]
-   [child (_cpointer/null 'child)]
-   [producer _mlt-service-pointer]
-   [frames (_cpointer/null 'frames _mlt-frame-pointer)]
-   [held _int]))
-(define-cstruct (_mlt-producer _mlt-service)
-  ([get-frame* (_fun _mlt-producer-pointer _mlt-frame-pointer _int -> _int)]
-   [close* _mlt-destructor]
-   [close-object (_cpointer/null 'close-object)]
-   [local (_cpointer/null 'local)]
-   [child (_cpointer/null 'child)]))
-(define-cstruct (_mlt-playlist _mlt-producer)
-  ([blank* _mlt-producer]
-   [size* _int]
-   [count* _int]
-   [list* (_cpointer 'list (_cpointer 'list* _playlist-entry))]))
-(define-cstruct _mlt-playlist-clip-info
-  ([clip _int]
-   [producer _mlt-producer-pointer/null]
-   [cut _mlt-producer-pointer/null]
-   [start _mlt-position]
-   [resource _string]
-   [frame-in _mlt-position]
-   [frame-out _mlt-position]
-   [frame-count _mlt-position]
-   [length _mlt-position]
-   [fps _float]
-   [repeate _int]))
-(define-cstruct (_mlt-tractor _mlt-producer)
-  ([producer* _mlt-service-pointer]))
-(define-cstruct _mlt-track
-  ([producer _mlt-producer-pointer/null]
-   [event _mlt-event/null]))
-(define-cstruct (_mlt-multitrack _mlt-producer)
-   ([list* _mlt-track-pointer]
-   [size* _int]
-   [count* _int]))
 
 ;; Factory
 (define-mlt* mlt-factory-init (_fun _path -> [v : _mlt-repository/null]
                                     -> (null-error v)))
-(define-mlt* mlt-factory-producer (_fun _mlt-profile-pointer _symbol-or-null _string
-                                        -> [v : _mlt-producer-pointer/null]
-                                        -> (null-error v)))
-(define-mlt* mlt-factory-consumer (_fun _mlt-profile-pointer _symbol-or-null _string
-                                        -> [v : _mlt-consumer-pointer/null]
-                                        -> (null-error v)))
-(define-mlt* mlt-factory-filter (_fun _mlt-profile-pointer _symbol-or-null _string
-                                      -> [v : _mlt-filter-pointer/null]
-                                      -> (null-error v)))
-(define-mlt* mlt-factory-transition (_fun _mlt-profile-pointer _symbol-or-null _string
-                                          -> [v : _mlt-transition-pointer/null]
-                                          -> (null-error v)))
 (define-mlt* mlt-factory-close (_fun -> _void))
 
 ;; Profile
@@ -239,4 +91,3 @@
 (define-mlt* mlt-profile-close (_fun _mlt-profile-pointer -> _void))
 (define-mlt* mlt-profile-dar (_fun _mlt-profile-pointer -> _double))
 (define-mlt* mlt-profile-fps (_fun _mlt-profile-pointer -> _double))
-(define-mlt* mlt-profile-from-producer (_fun _mlt-profile-pointer _mlt-producer-pointer -> _void))
