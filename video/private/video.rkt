@@ -195,155 +195,28 @@
            (name #,@(map (curry datum->syntax stx) all-ids)))
          (define-syntax new-supers '#,(list all-structs all-ids all-defaults))))]))
 
-;; Structs
 (define-constructor video #f ())
-
 (define-constructor link video ([source #f] [target #f] [index 0])
-  (mlt-*-connect target (mlt-*-service source) index))
-
 (define-constructor properties video ([prop (hash)]
-                                      [prop-default-proc mlt-prop-default-proc]))
-
 (define (get-property dict key
-                      [extra-info #f])
-  (dict-ref (properties-prop dict) key
-            (λ () ((properties-prop-default-proc dict) dict key extra-info))))
-
 (define (mlt-prop-default-proc dict key default-type)
-  (define v (convert dict))
-  (unless v
-    (error 'properties "MLT object for ~a not created, cannot get default property" dict))
-  (match default-type
-    [(or 'string #f) (mlt-properties-get v key)]
-    ['int (mlt-properties-get-int v key)]
-    ['int64 (mlt-properties-get-int64 v key)]
-    ['mlt-position (mlt-properties-get-position v key)]
-    ['double (mlt-properties-get-double v key)]
-    [else (error 'properties "Not a valid default-type ~a" default-type)]))
-
 (define-constructor anim-property video ([value #f] [position #f] [length #f]))
-
 (define-constructor frame properties ())
-
 (define-constructor service properties ([filters '()]))
-
-(define-constructor filter service ([type #f] [source #f])
-  (define f (mlt-factory-filter (current-profile) type source))
-  (register-mlt-close mlt-filter-close f))
-
-(define-constructor transition service ([type #f] [source #f] [length #f])
-  (define t (mlt-factory-transition (current-profile) type source))
-  (register-mlt-close mlt-transition-close t))
-
-(define-constructor consumer service ([type #f] [target #f])
-  (define c (mlt-factory-consumer (current-profile) type target))
-  (register-mlt-close mlt-consumer-close c))
-
+(define-constructor filter service ([type #f] [source #f]))
+(define-constructor transition service ([type #f] [source #f] [length #f]))
+(define-constructor consumer service ([type #f] [target #f]))
 (define-constructor producer service ([type #f]
                                       [source #f]
                                       [start #f]
                                       [end #f]
                                       [speed #f]
                                       [seek #f]
-                                      [unbounded? #f])
-  (define producer* (mlt-factory-producer (current-profile) type source))
-  (define start* (or start -1))
-  (define end* (or end -1))
-  (mlt-producer-set-in-and-out producer* start* (- end* 1))
-  (when speed
-    (mlt-producer-set-speed producer* speed))
-  (when seek
-    (mlt-producer-seek producer* seek))
-  (register-mlt-close mlt-producer-close producer*))
-
-(define-constructor blank producer ([length 0])
-  (convert (make-playlist #:elements (list this))))
-
-(require racket/pretty)
-(define-constructor playlist producer ([elements '()])
-  (define playlist* (mlt-playlist-init))
-  (for ([i (in-list elements)])
-    (match i
-      [(struct* blank ([length length]))
-       (mlt-playlist-blank playlist* length)]
-      [(struct* playlist-producer ([start start]
-                                   [end end]))
-       #:when (and start end)
-       (define i* (convert i))
-       (mlt-playlist-append-io playlist* i* start end)]
-      [(struct* transition ()) (void)] ;; Must be handled after clips are added
-      [_ ; (struct* producer ()) (But can be converted first
-       (define i* (convert i))
-       (mlt-playlist-append playlist* i*)]
-      #;[_ (error 'playlist "Not a playlist element: ~a" i)]))
-  (for ([e (in-list elements)]
-        [i (in-naturals)])
-    (when (transition? e)
-      (mlt-playlist-mix playlist*
-                        (sub1 i)
-                        (or (transition-length e) 0)
-                        (convert e))))
-  (register-mlt-close mlt-playlist-close playlist*))
-
-(define-constructor playlist-producer video ([producer #f] [start #f] [end #f])
-  (convert producer))
-
-(define-constructor multitrack producer ([tracks '()] [field '()])
-  (define tractor* (mlt-tractor-new))                    ; Tractor
-  (define multitrack* (mlt-tractor-multitrack tractor*)) ; Multitrack
-  (for ([track (in-list tracks)]
-        [i (in-naturals)])
-    (define track* (convert track))
-    (mlt-multitrack-connect multitrack* track* i))
-  (define-values (max-bounded-in max-bounded-out)
-    (for/fold ([i 0]    ;; MLT multitracks will become largest producer
-               [o #f])  ;; which is a problem for unbounded data.
-              ([track (in-list tracks)])
-      (define unbounded? (unbounded-video? track))
-      (cond
-        [unbounded? (values i o)]
-        [else
-         (define in (get-property track "in" 'int))
-         (define out (get-property track "out" 'int))
-         (values
-          (if in
-              (min i in)
-              i)
-          (cond [(and o out)
-                 (max o out)]
-                [out out]
-                [else o]))])))
-  (mlt-producer-set-in-and-out tractor* (or max-bounded-in -1) (or max-bounded-out -1))
-  (register-mlt-close mlt-multitrack-close multitrack*)
-  (define field* (mlt-tractor-field tractor*))           ; Field
-  (for ([element (in-list field)])
-    (match element
-      [(struct* field-element ([element element]
-                               [track track]
-                               [track-2 track-2]))
-       (define element* (convert element))
-       (cond
-         [(transition? element)
-          (define-values (track* track2*)
-            (for/fold ([track* #f]
-                       [track2* #f])
-                     ([t (in-list tracks)]
-                      [i (in-naturals)])
-              (values
-               (or track* (if (eq? t track) i #f))
-               (or track2* (if (eq? t track-2) i #f)))))
-          (unless (and track* track2*)
-            (error 'multitrack
-                   "Cannot find producers in multitrack ~a: ~a ~a"
-                   tracks
-                   track
-                   track-2))
-          (mlt-field-plant-transition field* element* track* track2*)]
-         [(filter? element)
-          (mlt-field-plant-filter field* element* track)])]))
-  (register-mlt-close mlt-field-close field*)
-  tractor*)
-
+                                      [unbounded? #f]))
+(define-constructor blank producer ([length 0]))
+(define-constructor playlist producer ([elements '()]))
+(define-constructor playlist-producer video ([producer #f] [start #f] [end #f]))
+(define-constructor multitrack producer ([tracks '()] [field '()]))
 (define-constructor field-element video ([element #f] [track #f] [track-2 #f]))
 
 ;; Hack because we can't currently guarentee that mlt is installed
