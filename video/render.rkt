@@ -17,57 +17,10 @@
                      racket/syntax
                      syntax/parse))
 
-(provide
- (contract-out
-  ;; Render a video object (including the links
-  [render (->* [any/c]
-               [(or/c path-string? path? #f)
-                #:dest-filename (or/c path-string? path? #f)
-                #:render-mixin (-> class? class?)
-                #:profile-name (or/c string? #f)
-                #:width (and/c integer? positive?)
-                #:height (and/c integer? positive?)
-                #:fps number?
-                #:start (or/c nonnegative-integer? #f)
-                #:end (or/c nonnegative-integer? #f)
-                #:speed (or/c number? #f)
-                #:timeout (or/c number? #f)]
-               void?)])
- render%
- render<%>)
-
-(define (render video
-                [dest #f]
-                #:dest-filename [dest-filename #f]
-                #:render-mixin [render-mixin values]
-                #:profile-name [profile-name #f]
-                #:width [width 720]
-                #:height [height 576]
-                #:start [start #f]
-                #:end [end #f]
-                #:fps [fps 25]
-                #:speed [speed #f]
-                #:timeout [timeout #f])
-  (define dest* (or dest (make-temporary-file "rktvid~a" 'directory)))
-  (define r% (render-mixin render%))
-  (define renderer
-    (new r%
-         [dest-dir dest*]
-         [dest-filename dest-filename]
-         [width width]
-         [height height]
-         [fps fps]))
-  (let* ([res (send renderer setup-profile)]
-         [res (send renderer prepare video)]
-         [target (send renderer render res)]
-         [res (send renderer play res target start end speed timeout)])
-    (void)))
-
-(define render<%>
-  (interface () get-profile setup-profile prepare render play))
+(provide (all-defined-out))
 
 (define render%
-  (class* object% (render<%>)
+  (class* object% ()
     (super-new)
     (init-field dest-dir
                 [dest-filename #f]
@@ -91,41 +44,8 @@
       (set-mlt-profile-width! profile width)
       (set-mlt-profile-height! profile height)
       (set-mlt-profile-frame-rate-den! profile (denominator fps*))
-      (set-mlt-profile-frame-rate-num! profile (numerator fps*)))
+      (set-mlt-profile-frame-rate-num! profile (numerator fps*)))))
     
-    (define/public (prepare source)
-      (parameterize ([current-renderer this]
-                     [current-profile profile])
-        (cond
-          [(pict? source)
-           (define pict-name
-             (build-path (or dest-dir
-                             (make-temporary-file "rktvid~a" 'directory))
-                         (get-current-filename)))
-           (send (pict->bitmap source) save-file pict-name 'png 100)
-           (prepare (make-producer #:source (format "pixbuf:~a" pict-name)))]
-          [(file:convertible? source)
-           (define ret (or (file:convert source 'mlt)
-                           (file:convert source 'video)))
-           (or ret (error "Not convertible to video data"))]
-          [else (raise-user-error 'render "~a is not convertible" source)])))
-      
-    (define/public (render source)
-      (parameterize ([current-renderer this])
-        (mlt-*-connect (make-consumer) source)))
-    
-    (define/public (play source target start end speed timeout)
-      (mlt-producer-set-in-and-out source (or start -1) (or end -1))
-      (when speed
-        (mlt-producer-set-speed source (exact->inexact speed)))
-      (mlt-consumer-start target)
-      (let loop ([timeout timeout])
-        (sleep 1)
-        (when (and timeout (zero? timeout))
-          (mlt-consumer-stop target))
-        (unless (mlt-consumer-is-stopped target)
-          (loop (and timeout (sub1 timeout))))))))
-
 ;; Set the current renderer
 (let ([r (new render% [dest-dir #f])])
   (send r setup-profile)
