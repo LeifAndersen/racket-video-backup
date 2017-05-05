@@ -1,12 +1,7 @@
 #lang racket/base
 
 (require ffi/unsafe
-         ffi/unsafe/define
-         (for-syntax ffi/unsafe
-                     racket/syntax
-                     racket/base
-                     racket/string
-                     syntax/parse))
+         ffi/unsafe/define)
 (provide (all-defined-out))
 
 ;; MLT Library
@@ -15,8 +10,6 @@
 ;;  not installed.
 (define mlt-lib (ffi-lib "libmlt" '("6")
                          #:fail (λ () #f)))
-(define-for-syntax mlt-lib (ffi-lib "libmlt" '("6")
-                                    #:fail (λ () #f)))
 (define-ffi-definer define-mlt mlt-lib)
 
 ;; Types
