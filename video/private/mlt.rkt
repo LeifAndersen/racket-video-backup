@@ -64,19 +64,7 @@
 
 ;; Types
 (define-cpointer-type _mlt-repository)
-(define-cstruct _mlt-profile
-  ([description _string]
-   [frame-rate-num _int]
-   [frame-rate-den _int]
-   [width _int]
-   [height _int]
-   [progressive _int]
-   [sample-aspect-num _int]
-   [sample-aspect-den _int]
-   [display-aspect-num _int]
-   [disaply-aspect-den _int]
-   [colorspace _int]
-   [is-explicit _int]))
+(define-cpointer-type _mlt-profile-pointer)
 
 ;; Factory
 (define-mlt* mlt-factory-init (_fun _path -> [v : _mlt-repository/null]
@@ -86,8 +74,3 @@
 ;; Profile
 (define-mlt* mlt-profile-init (_fun _string -> [v : _mlt-profile-pointer/null]
                                     -> (null-error v)))
-(define-mlt* mlt-profile-clone (_fun _mlt-profile-pointer -> [v : _mlt-profile-pointer]
-                                     -> (null-error v)))
-(define-mlt* mlt-profile-close (_fun _mlt-profile-pointer -> _void))
-(define-mlt* mlt-profile-dar (_fun _mlt-profile-pointer -> _double))
-(define-mlt* mlt-profile-fps (_fun _mlt-profile-pointer -> _double))
