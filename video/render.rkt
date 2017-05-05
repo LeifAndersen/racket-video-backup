@@ -29,25 +29,12 @@
                 [height 576]
                 [fps 25])
     
-    (define res-counter 0)
     (define profile (mlt-profile-init prof-name))
-    
-    (define/private (get-current-filename)
-      (begin0 (format "resource~a" res-counter)
-              (set! res-counter (add1 res-counter))))
 
     (define/public (get-profile)
-      profile)
-    
-    (define/public (setup-profile)
-      (define fps* (rationalize (inexact->exact fps) 1/1000000))
-      (set-mlt-profile-width! profile width)
-      (set-mlt-profile-height! profile height)
-      (set-mlt-profile-frame-rate-den! profile (denominator fps*))
-      (set-mlt-profile-frame-rate-num! profile (numerator fps*)))))
+      profile)))
     
 ;; Set the current renderer
 (let ([r (new render% [dest-dir #f])])
-  (send r setup-profile)
   (current-renderer r)
   (current-profile (send r get-profile)))
