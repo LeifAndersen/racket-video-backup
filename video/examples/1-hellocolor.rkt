@@ -1,3 +1,0 @@
-#lang video
-
-(color "green")
