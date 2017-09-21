@@ -19,7 +19,7 @@
 (require rackunit
          racket/logging
          racket/pretty
-         "../private/installer.rkt"
+         ;"../private/installer.rkt"
          (prefix-in green: "green.vid")
          (prefix-in video: "../render.rkt")
          (submod "../render.rkt" render-fields)
@@ -150,7 +150,7 @@
   (check-true (filter-node? (mk-split-node))))
 
 ;; Check the installer function
-(installer #f #f #f #f)
+;(installer #f #f #f #f)
 
 ;; Check capability to list devices
 (let ()
